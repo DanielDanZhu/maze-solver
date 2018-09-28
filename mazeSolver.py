@@ -4,12 +4,8 @@ class Maze:
     def __init__(self, mazeName):
         self.im = Image.open(mazeName)
         self.pix = self.im.load()
-        self.pixels = []
-        self.nodes = []
+        self.pixels = self.nodes = []
         self.start_node = self.end_node = None
-
-    def in_range(self, x, y):
-        return x >= 0 and x < self.im.width and y>= 0 and y < self.im.height
 
     def convert(self): # returns 2d boolean list representation of maze
         self.pixels = []
@@ -24,10 +20,10 @@ class Maze:
         for y in range(self.im.height):
             for x in range(self.im.width):
                 if not self.pixels[x][y]:                                       # is path
-                    if not self.in_range(x, y-1):                               # start
+                    if y - 1 < 0:                                               # start
                         self.nodes.append(Node(x, y, []))
                         self.start_node = self.nodes[len(self.nodes)-1]
-                    elif not self.in_range(x, y+1):                             # end
+                    elif y + 1 >= self.im.height:                               # end
                         self.nodes.append(Node(x, y, []))
                         self.end_node = self.nodes[len(self.nodes)-1]
                     elif (self.pixels[x-1][y] != self.pixels[x+1][y] or         # left != right
@@ -42,14 +38,13 @@ class Maze:
                 for xdir, ydir in directions:                                   # checks right and down
                     currx = node.x + xdir
                     curry = node.y + ydir
-                    added = False
+                    size = len(node.connections)
                     while not self.pixels[currx][curry]:                        # while on a path
                         for other_node in self.nodes:
-                            if currx == other_node.x and curry == other_node.y: #connects to node if met
-                                node.add_connection(other_node)
-                                other_node.add_connection(node)
-                                added = True
-                        if added:
+                            if currx == other_node.x and curry == other_node.y: # connects to node if met
+                                node.connections.append(other_node)
+                                other_node.connections.append(node)
+                        if len(node.connections) > size:                        # if a connection was added
                             break
                         currx += xdir
                         curry += ydir
@@ -67,25 +62,19 @@ class Maze:
         for i in self.nodes:
             print("(" + str(i.x) + ", " + str(i.y) + "): ", end = '')
             for other in i.connections:
-                print("[(" + str(other.x) + ", " + str(other.y) + "), " + str(i.get_distance(other)) + "] ", end = '')
+                print("[(" + str(other.x) + ", " + str(other.y) + "), " + str(i.distance(other)) + "] ", end = '')
             print()
-
-    def dijkstras(self):
-        
 
 class Node:
     def __init__(self, x, y, connections):
         self.x, self.y, self.connections= x, y, connections
 
-    def add_connection(self, other_node):
-        self.connections.append(other_node)
-
-    def get_distance(self, other_node):
+    def distance(self, other_node):
         if not other_node in self.connections:
             return 0
         return abs(self.x - other_node.x) + abs(self.y - other_node.y)
 
-m = Maze('maze4.png')
+m = Maze('maze3.png')
 m.convert()
 m.display_maze()
 m.create_nodes()
