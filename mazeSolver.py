@@ -1,5 +1,9 @@
 from PIL import Image
 
+class Node:
+    def __init__(self, x, y, connections):
+        self.x, self.y, self.connections= x, y, connections
+
 class Maze:
     def __init__(self, mazeName):
         self.im = Image.open(mazeName)
@@ -85,10 +89,14 @@ class Maze:
                             self.pix[xcurr, ycurr] = (255, 0, 0, 255)
                         return True
 
-class Node:
-    def __init__(self, x, y, connections):
-        self.x, self.y, self.connections= x, y, connections
+    def resize(self, ratio):
+        large_im = Image.new('RGBA', (self.im.width * ratio, self.im.height * ratio), color = 'black')
+        large_pix = large_im.load()
+        for x in range(large_im.width):
+            for y in range(large_im.height):
+                large_pix[x, y] = self.pix[int(x / ratio), int(y / ratio)]
+        large_im.save('solutionlarge.png')
 
 m = Maze('maze.png')
-m.convert()
 m.solve()
+m.resize(5)
