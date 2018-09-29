@@ -17,6 +17,7 @@ class Maze:
                 self.pixels[x].append(r == g == b == 0 and d == 255)
 
     def create_nodes(self):
+        self.convert()
         for y in range(self.im.height):
             for x in range(self.im.width):
                 if not self.pixels[x][y]:                                       # is path
@@ -31,6 +32,7 @@ class Maze:
                         self.nodes.append(Node(x, y, []))
 
     def connect_nodes(self):
+        self.create_nodes()
         directions = [[1, 0], [0, 1]]
 
         for node in self.nodes:
@@ -49,34 +51,44 @@ class Maze:
                         currx += xdir
                         curry += ydir
 
-    def display_maze(self):
-        for y in range(self.im.height):
-            for x in range(self.im.width):
-                if self.pixels[x][y]:
-                    print('█', end = '')
-                else:
-                    print(' ', end = '')
-            print('')
+    def solve(self):
+        self.connect_nodes()
+        unvisited = []
 
-    def display_nodes(self):
-        for i in self.nodes:
-            print("(" + str(i.x) + ", " + str(i.y) + "): ", end = '')
-            for other in i.connections:
-                print("[(" + str(other.x) + ", " + str(other.y) + "), " + str(i.distance(other)) + "] ", end = '')
-            print()
+        for node in self.nodes:
+            unvisited.append([node.x, node.y])
+
+        self.pix[self.start_node.x, self.start_node.y] = (255, 0, 0, 255)
+        self.visit(self.start_node, unvisited)
+
+        self.im.save('solution.png')
+
+    def visit(self, node, unvisited):
+        unvisited.remove([node.x, node.y])
+        # base case
+        if node == self.end_node:
+            return True
+        else:
+            for adj in node.connections:
+                if [adj.x, adj.y] in unvisited:
+                    # if path to unvisited node exists
+                    if self.visit(adj, unvisited):
+                        xdir = 1 if adj.x > node.x else -1
+                        ydir = 1 if adj.y > node.y else -1
+                        xcurr, ycurr = node.x, node.y
+                        # colors in path between nodes
+                        for i in range(abs(adj.x - node.x)):
+                            xcurr += xdir
+                            self.pix[xcurr, ycurr] = (255, 0, 0, 255)
+                        for i in range(abs(adj.y - node.y)):
+                            ycurr += ydir
+                            self.pix[xcurr, ycurr] = (255, 0, 0, 255)
+                        return True
 
 class Node:
     def __init__(self, x, y, connections):
         self.x, self.y, self.connections= x, y, connections
 
-    def distance(self, other_node):
-        if not other_node in self.connections:
-            return 0
-        return abs(self.x - other_node.x) + abs(self.y - other_node.y)
-
-m = Maze('maze3.png')
+m = Maze('maze.png')
 m.convert()
-m.display_maze()
-m.create_nodes()
-m.connect_nodes()
-m.display_nodes()
+m.solve()
